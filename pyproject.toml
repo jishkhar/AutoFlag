@@ -6,4 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.7",
+    "scikit-learn>=1.7.2",
+    "scikit-optimize>=0.10.2",
+    "xgboost>=3.1.2",
 ]
