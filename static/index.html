@@ -6,64 +6,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compiler Optimization Benchmark</title>
     <link rel="stylesheet" href="/static/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Updated Font: JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Compiler Optimization Benchmark</h1>
-            <p class="subtitle">Compare different optimization techniques on C/C++ benchmarks</p>
+            <h1>> Compiler_Benchmark_Tool</h1>
+            <p class="subtitle">/// Compare optimization techniques on C/C++ benchmarks</p>
         </header>
 
         <main>
             <section class="control-panel">
                 <div class="card">
-                    <h2>Configuration</h2>
+                    <div class="card-header">
+                        <span class="dot"></span> Configuration
+                    </div>
                     <form id="optimizationForm">
                         <div class="form-group">
-                            <label for="benchmarkSelect">Select Benchmark</label>
-                            <select id="benchmarkSelect" required>
-                                <option value="" disabled selected>Loading benchmarks...</option>
-                            </select>
+                            <label for="benchmarkSelect">Target Benchmark</label>
+                            <div class="select-wrapper">
+                                <select id="benchmarkSelect" required>
+                                    <option value="" disabled selected>Loading benchmarks...</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Optimizer</label>
+                            <label>Optimizer Strategy</label>
                             <div class="radio-group">
                                 <label class="radio-card">
                                     <input type="radio" name="optimizer" value="foga" required>
                                     <div class="radio-content">
                                         <span class="radio-title">FOGA</span>
-                                        <span class="radio-desc">Genetic Algorithm</span>
+                                        <span class="radio-desc">Genetic Algo</span>
                                     </div>
                                 </label>
                                 <label class="radio-card">
                                     <input type="radio" name="optimizer" value="hbrf" required>
                                     <div class="radio-content">
                                         <span class="radio-title">HBRF</span>
-                                        <span class="radio-desc">Hybrid Bayesian-RF</span>
+                                        <span class="radio-desc">Hybrid Bayes-RF</span>
                                     </div>
                                 </label>
                                 <label class="radio-card">
                                     <input type="radio" name="optimizer" value="xgboost" required>
                                     <div class="radio-content">
                                         <span class="radio-title">XGBoost</span>
-                                        <span class="radio-desc">Gradient Boosting</span>
+                                        <span class="radio-desc">Gradient Boost</span>
                                     </div>
                                 </label>
                                 <label class="radio-card">
                                     <input type="radio" name="optimizer" value="compare" required>
                                     <div class="radio-content">
-                                        <span class="radio-title">Compare All</span>
-                                        <span class="radio-desc">Run all & compare</span>
+                                        <span class="radio-title">COMPARE</span>
+                                        <span class="radio-desc">Run All</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
                         <button type="submit" class="btn-primary" id="runBtn">
-                            Run Optimization
+                            [ EXECUTE OPTIMIZATION ]
                         </button>
                     </form>
                 </div>
@@ -72,21 +79,23 @@
             <section class="results-panel" id="resultsPanel" style="display: none;">
                 <div class="card">
                     <div class="results-header">
-                        <h2>Results</h2>
-                        <span id="statusBadge" class="badge badge-pending">Pending</span>
+                        <h2>Output Logs</h2>
+                        <span id="statusBadge" class="badge badge-pending">PENDING</span>
                     </div>
 
                     <div id="loadingState" class="loading-state" style="display: none;">
-                        <div class="spinner"></div>
-                        <p>Optimization in progress... This may take a while.</p>
+                        <div class="loader"></div>
+                        <p class="blink">PROCESSING_...</p>
                     </div>
 
                     <div id="resultsContent" class="results-content">
-                        <!-- Results will be injected here -->
+                        <!-- Results injected here -->
                     </div>
 
                     <div id="terminalOutput" class="terminal-output" style="display: none;">
-                        <h3>Terminal Output</h3>
+                        <div class="terminal-header">
+                            <span>console_output</span>
+                        </div>
                         <pre id="outputContent"></pre>
                     </div>
 

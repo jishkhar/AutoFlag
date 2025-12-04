@@ -36,46 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!benchmark || !optimizer) return;
 
-        // Reset UI
+        // UI Reset
         runBtn.disabled = true;
+        runBtn.textContent = 'Processing...';
         resultsPanel.style.display = 'block';
-        loadingState.style.display = 'none';
+        loadingState.style.display = 'block';
         resultsContent.innerHTML = '';
-        terminalOutput.style.display = 'block';
-        outputContent.textContent = 'Initializing optimization...\n';
+        terminalOutput.style.display = 'none'; // Hide terminal initially until data comes
+        outputContent.textContent = '';
         errorState.style.display = 'none';
         updateStatus('running');
 
+        // Scroll to results
+        resultsPanel.scrollIntoView({ behavior: 'smooth' });
 
         try {
-            // 1. Get the file content first (we need to upload it)
-            // Since we can't easily read local files from browser JS without user selection,
-            // and the API expects an upload, we'll need a way to tell the API to use a local file
-            // OR we fetch the file content first if the API supported it.
-
-            // WAIT: The API expects an UploadFile. 
-            // But the files are already on the server in `benchmarks/`.
-            // The API design assumes the user uploads a file.
-            // I should modify the API to accept a file path OR an upload.
-            // OR, I can fetch the file content from the server (if I add an endpoint) and then re-upload it.
-
-            // Let's try to fetch the file content first.
-            // I'll add a helper endpoint to get benchmark content or just modify the API to accept a 'benchmark_name'
-
-            // Actually, the easiest way without changing the API too much is to:
-            // 1. Fetch the file content from the server (I need an endpoint for this).
-            // 2. Create a Blob and upload it.
-
-            // Let's assume I can't easily change the API to accept paths right now (though I should).
-            // I'll fetch the file content via a new endpoint I'll add, or just try to read it if I can.
-
-            // Wait, I am the developer. I can change the API.
-            // I will modify the frontend to just send the benchmark name, 
-            // BUT the current API endpoints (`/optimize/foga` etc) expect `source_file: UploadFile`.
-
-            // Workaround: Fetch the file from the server using a new endpoint, then upload it back.
-            // I'll add `GET /benchmarks/{filename}` to api.py first.
-
+            // Fetch file content
             const fileResponse = await fetch(`/benchmarks/${benchmark}`);
             if (!fileResponse.ok) throw new Error('Failed to fetch benchmark file');
             const blob = await fileResponse.blob();
@@ -84,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('source_file', file);
 
-            // 2. Start optimization
+            // Determine endpoint
             let endpoint = '';
             if (optimizer === 'compare') {
                 endpoint = '/optimize/compare';
@@ -104,17 +80,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const job = await response.json();
 
-            // Start streaming output
+            // Show terminal once job starts
+            terminalOutput.style.display = 'block';
             startStreaming(job.job_id);
-
-            // Also poll for status to know when it's fully done (for results JSON)
             pollJobStatus(job.job_id);
 
         } catch (err) {
             showError(err.message);
-            runBtn.disabled = false;
+            resetBtn();
         }
     });
+
+    function resetBtn() {
+        runBtn.disabled = false;
+        runBtn.textContent = '[ EXECUTE OPTIMIZATION ]';
+    }
 
     async function pollJobStatus(jobId) {
         const pollInterval = setInterval(async () => {
@@ -125,20 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (job.status === 'completed') {
                     clearInterval(pollInterval);
                     updateStatus('completed');
-                    // loadingState.style.display = 'none'; // Already hidden
+                    loadingState.style.display = 'none';
                     showResults(job);
-                    runBtn.disabled = false;
+                    resetBtn();
                 } else if (job.status === 'failed') {
                     clearInterval(pollInterval);
                     updateStatus('failed');
-                    // loadingState.style.display = 'none'; // Already hidden
+                    loadingState.style.display = 'none';
                     showError(job.error || 'Optimization failed');
-                    runBtn.disabled = false;
+                    resetBtn();
                 }
             } catch (err) {
                 clearInterval(pollInterval);
                 showError('Failed to poll job status');
-                runBtn.disabled = false;
+                resetBtn();
             }
         }, 2000);
     }
@@ -147,19 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const eventSource = new EventSource(`/jobs/${jobId}/stream`);
 
         eventSource.onmessage = (event) => {
-            // Append new data to the terminal output
-            // outputContent.textContent += event.data + '\n'; // This might double newlines if data already has them
-            // The data from server is line-based.
-            // Append new data to the terminal output
-            // The data from server is line-based and stripped of trailing newline for SSE transport.
-            // So we add the newline back here for display.
             outputContent.textContent += event.data + '\n';
-
-            // Auto-scroll to bottom
-            const terminalContainer = document.querySelector('.terminal-output');
-            if (terminalContainer) {
-                terminalContainer.scrollTop = terminalContainer.scrollHeight;
-            }
+            // Auto-scroll
+            const pre = document.querySelector('.terminal-output pre');
+            if (pre) pre.scrollTop = pre.scrollHeight;
         };
 
         eventSource.addEventListener('close', () => {
@@ -167,19 +138,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         eventSource.onerror = (err) => {
-            console.error('EventSource failed:', err);
             eventSource.close();
         };
     }
 
     function updateStatus(status) {
         statusBadge.className = `badge badge-${status}`;
-        statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        statusBadge.textContent = status.toUpperCase();
     }
 
     function showError(msg) {
         errorState.style.display = 'block';
-        errorMessage.textContent = msg;
+        errorMessage.textContent = `ERROR: ${msg}`;
         loadingState.style.display = 'none';
     }
 
@@ -187,42 +157,55 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
 
         if (job.result) {
-            html += `
-                <div class="result-item">
-                    <div class="result-label">Best Execution Time</div>
-                    <div class="result-value">${job.result.best_time ? job.result.best_time.toFixed(6) + ' s' : 'N/A'}</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Total Optimization Time</div>
-                    <div class="result-value">${job.result.total_time ? job.result.total_time.toFixed(2) + ' s' : 'N/A'}</div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Evaluations</div>
-                    <div class="result-value">${job.result.evaluations || 'N/A'}</div>
-                </div>
-            `;
+            // Format generic results
+            if (job.result.best_time !== undefined) {
+                 html += `
+                    <div class="result-item">
+                        <div class="result-label">BEST EXECUTION TIME</div>
+                        <div class="result-value">${job.result.best_time.toFixed(6)} s</div>
+                    </div>
+                `;
+            }
+            if (job.result.total_time !== undefined) {
+                 html += `
+                    <div class="result-item">
+                        <div class="result-label">OPTIMIZATION TIME</div>
+                        <div class="result-value">${job.result.total_time.toFixed(2)} s</div>
+                    </div>
+                `;
+            }
+            if (job.result.evaluations !== undefined) {
+                 html += `
+                    <div class="result-item">
+                        <div class="result-label">TOTAL EVALUATIONS</div>
+                        <div class="result-value">${job.result.evaluations}</div>
+                    </div>
+                `;
+            }
 
             if (job.result.enabled_flags && job.result.enabled_flags.length > 0) {
                 html += `
-                    <div class="result-item">
-                        <div class="result-label">Enabled Flags</div>
-                        <pre>${job.result.enabled_flags.join('\n')}</pre>
+                    <div class="result-item" style="display:block">
+                        <div class="result-label" style="margin-bottom:0.5rem">ENABLED FLAGS</div>
+                        <div class="result-value" style="font-size:0.8rem; color: #fff;">${job.result.enabled_flags.join(' ')}</div>
                     </div>
                 `;
             }
         }
 
+        // Handle generic JSON dump for comparisons if structure differs
         if (job.optimizer === 'compare_optimizers' && job.result) {
-            // Handle comparison results specifically if structure differs
-            html = '<pre>' + JSON.stringify(job.result, null, 2) + '</pre>';
+             html += `
+                <div class="result-item" style="display:block">
+                    <pre style="background:transparent; padding:0; color:var(--primary);">${JSON.stringify(job.result, null, 2)}</pre>
+                </div>
+            `;
         }
 
         resultsContent.innerHTML = html;
 
         if (job.output) {
-            terminalOutput.style.display = 'block';
-            // We don't overwrite here because we might have streamed it.
-            // But to be safe, we can ensure it's fully consistent.
+            // Ensure final output is synced
             outputContent.textContent = job.output;
         }
     }
