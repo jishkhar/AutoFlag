@@ -252,14 +252,6 @@ They will automatically appear in the web interface and be available via the API
 - **Server Port**: `8000`
 - **Job Timeout**: 2 hours
 
-### Customization
-
-Modify `api.py` to change:
-- Optimization parameters
-- Timeout values
-- Storage locations
-- CORS settings
-
 ## 🔧 Tech Stack
 
 - **Backend**: FastAPI, Python 3.10+
@@ -275,34 +267,9 @@ Modify `api.py` to change:
 - **Concurrent Jobs**: Multiple optimizations can run simultaneously in the background.
 - **Security**: Add authentication/authorization for production deployment.
 
-## 🤝 Contributing
-
-Contributions are welcome! Areas for improvement:
-
-- Additional optimization algorithms
-- Performance visualizations
-- Job persistence (database integration)
-- Authentication and user management
-- Docker containerization
-- Batch optimization support
-
-## 📄 License
-
-[Specify your license here]
 
 ## 🔗 Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [GCC Optimization Options](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html)
 - [Full API Documentation](API_README.md)
-
-## 📧 Support
-
-For questions or issues:
-- Check the interactive API docs at `/docs`
-- Review examples in [API_README.md](API_README.md)
-- Test with the health endpoint: `/health`
-
----
-
-**Made with ❤️ for compiler optimization research and education**
